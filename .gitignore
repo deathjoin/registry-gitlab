@@ -1,0 +1,8 @@
+auth/domain.key
+auth/domain.crt
+auth/nginx.htpasswd
+data/*
+gitlab-config/*
+gitlab-data/*
+gitlab-logs/*
+registry-data/*

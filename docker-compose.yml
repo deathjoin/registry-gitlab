@@ -1,0 +1,55 @@
+version: '3.4'
+services:
+  registry:
+    image: registry:2
+    volumes:
+      - ./registry-data:/var/lib/registry
+      
+  nginx:
+    image: "nginx:alpine"
+    ports:
+      - 5043:443
+    links:
+      - registry:registry
+    volumes:
+      - ./auth:/etc/nginx/conf.d
+      - ./auth/nginx.conf:/etc/nginx/nginx.conf:ro
+  
+  postgresql:
+    image: postgres:13.1
+    volumes:
+    - ./postgresql:/var/lib/postgresql
+    # - $GITLAB_HOME/initsql:/docker-entrypoint-initdb.d
+    environment:
+    - POSTGRES_USER=gitlab
+    - POSTGRES_PASSWORD=gitlab
+    - POSTGRES_DB=gitlabhq_production
+  
+  gitlab:
+    image: gitlab/gitlab-ee:latest
+    depends_on:
+    - postgresql
+    - registry
+    - nginx
+    ports:
+    - "80:80"
+    - "2202:22"
+    - "443:443"
+    volumes:
+    - ./gitlab-config:/etc/gitlab
+    - ./gitlab-logs:/var/log/gitlab
+    - ./gitlab-data:/var/opt/gitlab
+    - ./auth:/auth
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://gitlab.example.com'
+        registry_external_url 'https://registry:5043'
+        registry_nginx['ssl_certificate'] = '/auth/domain.crt'
+        registry_nginx['ssl_certificate_key'] = '/auth/domain.key'
+        postgresql['enable'] = false
+        gitlab_rails['db_username'] = "gitlab"
+        gitlab_rails['db_password'] = "gitlab"
+        gitlab_rails['db_host'] = "postgresql"
+        gitlab_rails['db_database'] = "gitlabhq_production"
+        gitlab_rails['db_adapter'] = 'postgresql'
+        gitlab_rails['db_encoding'] = 'utf8'
