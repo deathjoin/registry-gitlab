@@ -1,0 +1,9 @@
+version: '3.4'
+services:
+  gitlab-runner-docker:
+    image: gitlab/gitlab-runner:latest
+    depends_on:
+      - gitlab
+    volumes:
+    - ./gitlab-runner-config/docker-runner.toml:/etc/gitlab-runner/config.toml
+    - /var/run/docker.sock:/var/run/docker.sock

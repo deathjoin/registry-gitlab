@@ -42,7 +42,7 @@ services:
     - ./auth:/auth
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'http://gitlab.example.com'
+        # external_url 'http://gitlab.example.com'
         registry_external_url 'https://registry:5043'
         registry_nginx['ssl_certificate'] = '/auth/domain.crt'
         registry_nginx['ssl_certificate_key'] = '/auth/domain.key'
