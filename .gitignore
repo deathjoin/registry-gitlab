@@ -6,3 +6,4 @@ gitlab-config/*
 gitlab-data/*
 gitlab-logs/*
 registry-data/*
+postgresql-data/*

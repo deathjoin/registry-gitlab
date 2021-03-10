@@ -18,8 +18,13 @@ services:
   postgresql:
     image: postgres:13.1
     volumes:
-    - ./postgresql-data:/var/lib/postgresql/data
+    # wow, ./postgresql-data — moint bind, postresql-data — volume
+    # https://docs.docker.com/storage/bind-mounts/
+    # well, bind mount not working, but volume with bind option works: https://stackoverflow.com/a/55952189/6800400
+    # - ./postgresql-data:/var/lib/postgresql/data
+    - postgresql-data:/var/lib/postgresql/data
     # - $GITLAB_HOME/initsql:/docker-entrypoint-initdb.d
+
     environment:
     - POSTGRES_USER=gitlab
     - POSTGRES_PASSWORD=gitlab
@@ -53,3 +58,11 @@ services:
         gitlab_rails['db_database'] = "gitlabhq_production"
         gitlab_rails['db_adapter'] = 'postgresql'
         gitlab_rails['db_encoding'] = 'utf8'
+  
+volumes:
+  postgresql-data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ${PWD}/postgresql-data
