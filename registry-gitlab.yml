@@ -2,11 +2,15 @@ version: '3.4'
 services:
   registry:
     image: registry:2
+    networks:
+    - gitlab-net
     volumes:
       - ./registry-data:/var/lib/registry
       
   nginx:
     image: "nginx:alpine"
+    networks:
+    - gitlab-net
     ports:
       - 5043:443
     links:
@@ -17,21 +21,43 @@ services:
   
   postgresql:
     image: postgres:13.1
+    networks:
+    - gitlab-net
     volumes:
     # wow, ./postgresql-data — moint bind, postresql-data — volume
     # https://docs.docker.com/storage/bind-mounts/
     # well, bind mount not working, but volume with bind option works: https://stackoverflow.com/a/55952189/6800400
-    # - ./postgresql-data:/var/lib/postgresql/data
     - postgresql-data:/var/lib/postgresql/data
-    # - $GITLAB_HOME/initsql:/docker-entrypoint-initdb.d
 
     environment:
     - POSTGRES_USER=gitlab
     - POSTGRES_PASSWORD=gitlab
     - POSTGRES_DB=gitlabhq_production
   
+  gitlab-runner-docker:
+    image: gitlab/gitlab-runner:latest
+    networks:
+    - gitlab-net
+    depends_on:
+    - gitlab
+    volumes:
+    - ./gitlab-runner-config/docker-runner.toml:/etc/gitlab-runner/config.toml
+    - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+    - CI_SERVER_URL=http://192.168.0.14/
+    - REGISTRATION_TOKEN=KJ3QgsWyZn3ef-sG1D5V
+    - RUNNER_NAME=Docker privileged container
+    - RUNNER_EXECUTOR=docker
+    - RUNNER_TAG_LIST=docker,dind
+    - DOCKER_PRIVILEGED=true
+    - DOCKER_IMAGE=docker:stable
+    - DOCKER_VOLUMES=/var/run/docker.sock:/var/run/docker.sock
+    # - DOCKER_EXTRA_HOSTS=gitlab.somehost.somenet:172.gitlab.container.ip
+  
   gitlab:
     image: gitlab/gitlab-ee:latest
+    networks:
+    - gitlab-net
     depends_on:
     - postgresql
     - registry
@@ -47,7 +73,7 @@ services:
     - ./auth:/auth
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        # external_url 'http://gitlab.example.com'
+        external_url 'http://192.168.0.14'
         registry_external_url 'https://registry:5043'
         registry_nginx['ssl_certificate'] = '/auth/domain.crt'
         registry_nginx['ssl_certificate_key'] = '/auth/domain.key'
@@ -59,6 +85,11 @@ services:
         gitlab_rails['db_adapter'] = 'postgresql'
         gitlab_rails['db_encoding'] = 'utf8'
   
+networks:
+  gitlab-net:
+    name: gitlab-net
+    driver: bridge
+
 volumes:
   postgresql-data:
     driver: local

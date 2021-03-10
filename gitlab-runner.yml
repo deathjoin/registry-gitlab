@@ -2,8 +2,22 @@ version: '3.4'
 services:
   gitlab-runner-docker:
     image: gitlab/gitlab-runner:latest
-    depends_on:
-      - gitlab
+    networks:
+    - gitlab-net
     volumes:
     - ./gitlab-runner-config/docker-runner.toml:/etc/gitlab-runner/config.toml
     - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+    - CI_SERVER_URL=http://192.168.0.14/
+    - REGISTRATION_TOKEN=KJ3QgsWyZn3ef-sG1D5V
+    - RUNNER_NAME=Docker privileged container
+    - RUNNER_EXECUTOR=docker
+    - RUNNER_TAG_LIST=docker,dind
+    - DOCKER_PRIVILEGED=true
+    - DOCKER_IMAGE=docker:stable
+    - DOCKER_VOLUMES=/var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  gitlab-net:
+    name: gitlab-net
+    driver: bridge
